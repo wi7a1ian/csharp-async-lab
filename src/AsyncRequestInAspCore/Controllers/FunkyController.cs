@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -19,25 +20,25 @@ namespace AsyncRequestInAspCore.Controllers
             this.clientFactory = clientFactory;
         }
 
-        private async Task<string> PingServer()
+        private async Task<string> PingServer(CancellationToken ct)
         {
             var client = clientFactory.CreateClient();
-            var response = await client.GetAsync(targetUrl);
+            var response = await client.GetAsync(targetUrl, ct);
             return response.StatusCode.ToString();
         }
 
         [HttpGet]
         [Route("/api/async")]
-        public async Task<IActionResult> Async() => Ok(await PingServer());
+        public async Task<IActionResult> Async(CancellationToken ct = default) => Ok(await PingServer(ct));
 
         [HttpGet("/api/blocking")]
-        public IActionResult Blocking()
+        public IActionResult Blocking(CancellationToken ct = default)
         {
             var client = clientFactory.CreateClient();
-            return Ok(client.GetAsync(targetUrl).Result.StatusCode.ToString());
+            return Ok(client.GetAsync(targetUrl, ct).Result.StatusCode.ToString());
         }
 
         [HttpGet("/api/no-deadlock")]
-        public IActionResult NoDeadlock() => Ok(PingServer().Result);
+        public IActionResult NoDeadlock(CancellationToken ct = default) => Ok(PingServer(ct).Result);
     }
 }

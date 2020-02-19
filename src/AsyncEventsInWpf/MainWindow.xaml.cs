@@ -67,6 +67,12 @@ namespace AsyncEventsInWpf
                 responseCodeTb.Text = t.Result;
             }, TaskScheduler.FromCurrentSynchronizationContext());
         }
-        
+
+        private async void AsyncException_Click(object sender, RoutedEventArgs e)
+        {
+            // leave a brk point in DispatcherUnhandledException event handler
+            throw new NotImplementedException("Bazinga");
+        }
+
     }
 }

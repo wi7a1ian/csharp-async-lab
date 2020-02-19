@@ -13,5 +13,23 @@ namespace AsyncEventsInWpf
     /// </summary>
     public partial class App : Application
     {
+        public App()
+        {
+            Current.DispatcherUnhandledException += (sender, e) =>
+            {
+                // log unhandled exceptions thrown from within main UI thread
+                e.Handled = true; // Prevent default unhandled exception processing
+            };
+
+            AppDomain.CurrentDomain.UnhandledException += (sender, e) =>
+            {
+                // log unhandled exceptions thrown from background threads
+            };
+
+            TaskScheduler.UnobservedTaskException += (sender, e) =>
+            {
+                // log fire-n-forget tasks that got GCed
+            };
+        }
     }
 }

@@ -24,6 +24,9 @@
                     <Button Content="Ping (blocking+GetAwaiter)" Click="GetAwaiter_Click" />
                     <Button Content="Ping (fire and forget)" Click="FireNForget_Click" />
                 </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="5">
+                    <Button Content="Ping (Exception)" Click="AsyncException_Click" />
+                </StackPanel>
                 <TextBlock Name="responseCodeTb" />
             </StackPanel>
         </materialDesign:Card>
