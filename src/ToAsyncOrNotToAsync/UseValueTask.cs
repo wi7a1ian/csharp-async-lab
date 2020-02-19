@@ -22,5 +22,18 @@ namespace ToAsyncOrNotToAsync
         {
             return new ValueTask<int>(a + b);
         }
+
+        public static async ValueTask<int> MaybeAsync()
+        {
+            var rngValue = new Random().Next(0, 6);
+
+            //Use ValueTask<T> anytime method might not hit `await` most of the time
+            if (rngValue == 0)
+            { 
+                await Task.Delay(1000);
+            }
+
+            return rngValue;
+        }
     }
 }
