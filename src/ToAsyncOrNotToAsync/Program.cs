@@ -23,6 +23,10 @@ namespace ToAsyncOrNotToAsync
 
 		//	var arw = new AvoidReturnAwait();
 		//	await arw.CheckAvailabilityOf(new Uri("https://google.com"));
+
+		//	var afa = new AvoidFakeAsync();
+		//	await afa.CheckAvailabilityOf(new Uri[] { new Uri("https://google.com") });
+
 		//}
 	}
 
