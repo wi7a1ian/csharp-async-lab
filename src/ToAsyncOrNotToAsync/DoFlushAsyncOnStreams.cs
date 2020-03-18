@@ -10,11 +10,16 @@ namespace ToAsyncOrNotToAsync
     {
         public static async Task GreetFileAsync(string filename)
         {
-            using (var sw = new StreamWriter(filename))
+            await using (var sw = new StreamWriter(filename))
             {
                 await sw.WriteAsync("Hello World"); // written to a buffer
                 await sw.FlushAsync(); // flushed
             }
+
+            await using (var sw = new StreamWriter(filename))
+            {
+                await sw.WriteAsync("Hello World"); // written to a buffer
+            } // flushed
         }
     }
 }

@@ -75,8 +75,8 @@ namespace DeadlocksInWpf
             var statusCode = Task.Run( () => PingServer(url) ).Result;
 
             //var statusCode = Task.Run( () => PingServer(targetTB.Text)).Result; // is anyting wrong with this?
-            //statusCode = Task.Run( async () => await PingServer(url) ).Result; // is anyting wrong with this?
-            //statusCode = Task.Run( () => PingServer(url).Result ).Result; // is anyting wrong with this?
+            //var statusCode = Task.Run( async () => await PingServer(url) ).Result; // is anyting wrong with this?
+            //var statusCode = Task.Run( () => PingServer(url).Result ).Result; // is anyting wrong with this?
 
             responseCodeTb.Text = statusCode;
         }
