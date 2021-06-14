@@ -44,5 +44,47 @@ Not.
 - `await`able type must be able to expose `GetAwaiter()` (code: [AvaitablePrimitive](src/ToAsyncOrNotToAsync/AvaitablePrimitive.cs))
 - `async` operations are best if performed by the hardware!
 
+| Asynchronous execution | Flow |
+|--|--|
+|![image](https://user-images.githubusercontent.com/3278804/121895554-a83ab780-cd20-11eb-8623-1066deb5bb0f.png)|![image](https://user-images.githubusercontent.com/3278804/121895571-abce3e80-cd20-11eb-9fa9-92e933202a88.png)|
 
+## Exceptions in asynchronous execution
+- Exceptions from `async void` are propagated immediately as unhandled even in a `try`/`catch`, **usually** killing the app
+  - Code: [ExceptionsInAsync](src/ExceptionsInAsync)
+  - Code: [AsyncEventsInWpf > `AsyncException_Click`](src/AsyncEventsInWpf/MainWindow.xaml.cs#L71)
+- Exceptions from `async Task` are stored in the context of a `Task` and propagated when `await`ed/`Wait()` 
+  - or when cleaned up by the `GC` if nobody awaits it (surpressed since NET 4.5)
+  - Code: [ExceptionsInAsync](src/ExceptionsInAsync)
 
+## Top Issues with Asynchronous Execution
+- Deadlocks – when blocking (`.Result`, `.Wait()`) and `async` code in some `SynchronizationContexts`
+  - Code: [DeadlocksInWpf](src/DeadlocksInWpf/MainWindow.xaml.cs)
+  - Code: [AsyncRequestInAsp](src/AsyncRequestInAsp/Controllers/FunkyController.cs)
+  - Code: [AsyncRequestInAspCore](src/AsyncRequestInAspCore/Controllers/FunkyController.cs)
+- Access violation - accessing UI elements has to happen from UI execution context
+  - Code: [DeadlocksInWpf](src/DeadlocksInWpf/MainWindow.xaml.cs)
+- `AggregateException` – when blocking on `async` (except `GetAwaiter().GetResult()`)
+  - Code: [AsyncTaskIsBetterWithWait](src/ExceptionsInAsync/AsyncTaskIsBetterWithWait.cs)
+- Exceptions – unhandled may terminate the app soon or when closing
+- Blocking UI thread = blocked event pipe - slow synchronous or blocking code inside `async` call chain will make your app less responsive
+- Performance - `async` is an overhead, consider running synchronously (don’t confuse performance with scalability!)
+  - Code: [AsyncAllTheWay](src/ToAsyncOrNotToAsync/AsyncAllTheWay.cs) + ILSpy
+
+## Guidelines for working with `async`
+
+| what  | instead of | use |
+|:--|---|---|
+| retrieve the result of a background task | `Task.Wait()` or `Task.Result` | `await` |
+| wait for any task to complete | `Task.WaitAny()` | `await Task.WhenAny()` |
+| retrieve the results of multiple tasks | `Task.WaitAll()` | `await Task.WhenAll()` |
+| wait a period of time | `Thread.Sleep()` | `await Task.Delay` |
+| I/O bound operation | synchronous or parallel | `async` |
+| CPU boud operation | async | `Task.Run()` |
+
+- ***Async all the way*** - don’t mix blocking (`Thread.Sleep()`, `.Result`, `.Wait()`) and `async` code without carefully considering the consequences
+  - add `async` only where it is needed (usually at one of the ends of the call chain) and **let it naturally grow**
+  - Code: [AsyncAllTheWay](src/ToAsyncOrNotToAsync/AsyncAllTheWay.cs)
+- Avoid *async over sync* or *sync over async*...
+  - mixing can cause deadlocks, more-complex error handling and unexpected blocking of context threads
+  - avoid `Task.Run` inside `async` methods
+  - Code: [AvoidFakeAsync](src/ToAsyncOrNotToAsync/AvoidFakeAsync.cs)
