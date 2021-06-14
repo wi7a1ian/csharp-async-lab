@@ -74,17 +74,46 @@ Not.
 
 | what  | instead of | use |
 |:--|---|---|
-| retrieve the result of a background task | `Task.Wait()` or `Task.Result` | `await` |
-| wait for any task to complete | `Task.WaitAny()` | `await Task.WhenAny()` |
-| retrieve the results of multiple tasks | `Task.WaitAll()` | `await Task.WhenAll()` |
-| wait a period of time | `Thread.Sleep()` | `await Task.Delay` |
+| Retrieve the result of a background task | `Task.Wait()` or `Task.Result` | `await` |
+| Wait for any task to complete | `Task.WaitAny()` | `await Task.WhenAny()` |
+| Retrieve the results of multiple tasks | `Task.WaitAll()` | `await Task.WhenAll()` |
+| Wait a period of time | `Thread.Sleep()` | `await Task.Delay` |
 | I/O bound operation | synchronous or parallel | `async` |
 | CPU boud operation | async | `Task.Run()` |
 
 - ***Async all the way*** - don’t mix blocking (`Thread.Sleep()`, `.Result`, `.Wait()`) and `async` code without carefully considering the consequences
-  - add `async` only where it is needed (usually at one of the ends of the call chain) and **let it naturally grow**
+  - Add `async` only where it is needed (usually at one of the ends of the call chain) and **let it naturally grow**
   - Code: [AsyncAllTheWay](src/ToAsyncOrNotToAsync/AsyncAllTheWay.cs)
 - Avoid *async over sync* or *sync over async*...
-  - mixing can cause deadlocks, more-complex error handling and unexpected blocking of context threads
-  - avoid `Task.Run` inside `async` methods
+  - Mixing can cause deadlocks, more-complex error handling and unexpected blocking of context threads
+  - Avoid `Task.Run` inside `async` methods
   - Code: [AvoidFakeAsync](src/ToAsyncOrNotToAsync/AvoidFakeAsync.cs)
+- Avoid `async void`, prefer `async Task` method
+  - Exception: event handlers
+- Use `ConfigureAwait(false)` when blocking is unavoidable or **when designing library**
+  - Exception: methods that require context like UI elements, ASP request context...
+- Avoid `return await` - it generates overhead in form of async state machine (100b), where returning a `Task` would be enough
+  - Exception: in `try`/`catch` blocks, in `using(...)` blocks
+  - Code: [AvoidReturnAwait](src/ToAsyncOrNotToAsync/AvoidReturnAwait.cs)
+- Always `await Tasks` and handle all the exceptions
+- Always add handlers to *unobserved exceptions* and *unhandled exceptions*
+  - Code: [AsyncEventsInWpf](src/AsyncEventsInWpf/MainWindow.xaml.cs)
+- Use a helper when doing fire-and-forget (i.e: in a ctor) to hande exceptions
+  - Code: [AsyncTaskIsBetterWithHelper](src/ExceptionsInAsync/AsyncTaskIsBetterWithHelper.cs)
+- Remember to pass `CancellationToken` like you would to in case of parallel Tasks
+  - Code: [AsyncRequestInAspCore](src/AsyncRequestInAsp/Controllers/FunkyController.cs)
+- Be carefull for implicit `async void`
+  - Code: [AvoidImplicitAsyncVoid](src/ToAsyncOrNotToAsync/AvoidImplicitAsyncVoid.cs)
+- Use `SemaphoreSlim` for locking resources
+- Use `FlushAsync` for `Stream`/`StreamWriter`
+  - Code: [DoFlushAsyncOnStreams](src/ToAsyncOrNotToAsync/DoFlushAsyncOnStreams.cs)
+- Avoid *sync-over-async* in ctor - it's better to provide asynchronous factory that is going to call `async` operation and then return newly created object
+  - Code: [AvoidAsyncInCtor](src/ToAsyncOrNotToAsync/AvoidAsyncInCtor.cs)
+
+## Guidelines for working with `async` in libraries
+- Define a synchronous method for CPU-bound operations
+- Define an async method for I/O-bound operations
+- Define an async method if and only if we are not thread-bound
+- Lib users seeing synchronous method will assume that they can safely parallelize it using the `ThreadPool`
+- Lib users seeing async method will assume that spawning extra threads would be wasteful and instead parallelize the work by invoking the function in a tight loop on a single thread
+- **Never mix async and sync code in a library** - do not call them from each other for code reuse!
